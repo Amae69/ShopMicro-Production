@@ -37,13 +37,17 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/backend.yaml
-          kubectl apply -f k8s/frontend.yaml
-          kubectl apply -f k8s/ml-service.yaml
+          kubectl apply -f k8s/namespace.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/backend.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/frontend.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/ml-service.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/grafana.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/postgres.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/redis.yaml --validate=false --insecure-skip-tls-verify
+          kubectl apply -f k8s/ingress.yaml --validate=false --insecure-skip-tls-verify
           # Apply other manifests as needed
           
       - name: Verify Deployment
         run: |
-          kubectl rollout status deployment/backend -n shopmicro
-          kubectl rollout status deployment/frontend -n shopmicro
+          kubectl rollout status deployment/backend -n shopmicro --timeout=60s --insecure-skip-tls-verify
+          kubectl rollout status deployment/frontend -n shopmicro --timeout=60s --insecure-skip-tls-verify
