@@ -1,0 +1,36 @@
+name: Infrastructure Drift Detection
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # Run daily at 8am
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Check for Drift
+      id: plan
+      run: |
+        # Return success (0) if no changes, failure (2) if changes (drift)
+        terraform plan -detailed-exitcode
+      continue-on-error: true
+      # You would need AWS Credentials here
+
+    - name: Notify on Drift
+      if: steps.plan.outputs.exitcode == 2
+      run: |
+        echo "::error::Infrastructure Drift Detected! Terraform Plan shows changes."
+        # In a real setup, send Slack/Teams notification or open an Issue

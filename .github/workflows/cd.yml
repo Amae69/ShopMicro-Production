@@ -1,0 +1,49 @@
+name: ShopMicro CD
+
+on:
+  workflow_run:
+    workflows: ["ShopMicro CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy-dev:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Update Image Tags
+        run: |
+          # This assumes valid yq installed or using sed
+          # In a real scenario, use Helm or Kustomize for cleaner image updates
+          SHA_TAG="sha-$(git rev-parse --short HEAD)"
+          sed -i "s|image: .*/shopmicro-backend:.*|image: ghcr.io/${{ github.repository }}-backend:${SHA_TAG}|g" k8s/backend.yaml
+          sed -i "s|image: .*/shopmicro-frontend:.*|image: ghcr.io/${{ github.repository }}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
+          sed -i "s|image: .*/shopmicro-ml-service:.*|image: ghcr.io/${{ github.repository }}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/backend.yaml
+          kubectl apply -f k8s/frontend.yaml
+          kubectl apply -f k8s/ml-service.yaml
+          # Apply other manifests as needed
+          
+      - name: Verify Deployment
+        run: |
+          kubectl rollout status deployment/backend -n shopmicro
+          kubectl rollout status deployment/frontend -n shopmicro
