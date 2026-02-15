@@ -31,9 +31,15 @@ jobs:
           # This assumes valid yq installed or using sed
           # In a real scenario, use Helm or Kustomize for cleaner image updates
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
-          sed -i "s|image: .*/shopmicro-backend:.*|image: ghcr.io/${{ github.repository }}-backend:${SHA_TAG}|g" k8s/backend.yaml
-          sed -i "s|image: .*/shopmicro-frontend:.*|image: ghcr.io/${{ github.repository }}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
-          sed -i "s|image: .*/shopmicro-ml-service:.*|image: ghcr.io/${{ github.repository }}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
+          # Match both "repository/name:tag" and "name:tag" formats
+          sed -i "s|image: .*shopmicro-backend:.*|image: ghcr.io/${{ github.repository }}-backend:${SHA_TAG}|g" k8s/backend.yaml
+          sed -i "s|image: .*shopmicro-frontend:.*|image: ghcr.io/${{ github.repository }}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
+          sed -i "s|image: .*shopmicro-ml-service:.*|image: ghcr.io/${{ github.repository }}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
+          
+          # Change imagePullPolicy to IfNotPresent so nodes can pull from GHCR
+          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/backend.yaml
+          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
+          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
 
       - name: Deploy to Kubernetes
         run: |
