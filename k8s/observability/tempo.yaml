@@ -78,6 +78,7 @@ spec:
   ports:
     - port: 3200
       targetPort: 3200
+      name: http
     - port: 4317
       targetPort: 4317
       name: otlp-grpc
