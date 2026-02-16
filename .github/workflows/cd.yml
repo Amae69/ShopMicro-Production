@@ -24,19 +24,19 @@ jobs:
         run: |
           mkdir -p ~/.kube
           # Use env variable to safely handle multiline secrets
-          if echo "$KUBECONFIG_DATA" | grep -q "^[A-Za-z0-9+/=]*$"; then
+          if [ -z "$KUBECONFIG_DATA" ]; then
+            echo "Error: KUBECONFIG secret is empty"
+            exit 1
+          fi
+          
+          # Detect if it's base64 (contains no spaces)
+          if [[ ! "$KUBECONFIG_DATA" =~ [[:space:]] ]]; then
+            echo "Kubeconfig looks like base64, decoding..."
             echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
           else
+            echo "Kubeconfig looks like plain text"
             echo "$KUBECONFIG_DATA" > ~/.kube/config
           fi
-          
-          # Clean Master IP and perform safe replacement
-          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
-          if [ ! -z "$MASTER_IP" ]; then
-            # Target specifically the server line and avoid greedy matches
-            sed -i "s|server: https://[^ ]*|server: https://$MASTER_IP:6443|g" ~/.kube/config
-          fi
-          
           chmod 600 ~/.kube/config
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
@@ -58,18 +58,30 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl apply -f k8s/namespace.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/backend.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/frontend.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/ml-service.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/grafana.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/postgres.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/redis.yaml --validate=false --insecure-skip-tls-verify
-          kubectl apply -f k8s/ingress.yaml --validate=false --insecure-skip-tls-verify
-          # Apply other manifests as needed
+          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
+          K8S_ARGS="--insecure-skip-tls-verify"
+          if [ ! -z "$MASTER_IP" ]; then
+            K8S_ARGS="$K8S_ARGS --server=https://$MASTER_IP:6443"
+            echo "Using remote master IP: $MASTER_IP"
+          fi
+
+          kubectl apply -f k8s/namespace.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/backend.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/frontend.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/ml-service.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/grafana.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/postgres.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/redis.yaml --validate=false $K8S_ARGS
+          kubectl apply -f k8s/ingress.yaml --validate=false $K8S_ARGS
           
       - name: Verify Deployment
         run: |
-          kubectl rollout status deployment/backend -n shopmicro --timeout=180s --insecure-skip-tls-verify
-          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s --insecure-skip-tls-verify
-          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s --insecure-skip-tls-verify
+          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
+          K8S_ARGS="--insecure-skip-tls-verify"
+          if [ ! -z "$MASTER_IP" ]; then
+            K8S_ARGS="$K8S_ARGS --server=https://$MASTER_IP:6443"
+          fi
+
+          kubectl rollout status deployment/backend -n shopmicro --timeout=180s $K8S_ARGS
+          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s $K8S_ARGS
+          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s $K8S_ARGS
