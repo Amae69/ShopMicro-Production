@@ -41,6 +41,19 @@ jobs:
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
 
+      - name: Verify Secret Presence
+        run: |
+          if [ -z "$KUBECONFIG_DATA" ]; then echo "::error::KUBECONFIG secret is EMPTY. Please add it to GitHub Secrets."; exit 1; fi
+          if [ -z "$MASTER_IP_DATA" ]; then 
+            echo "::error::K8S_MASTER_IP secret is MISSING. Remote deployment from GitHub requires the Public IP of your Master node."
+            echo "::notice::Add a secret named 'K8S_MASTER_IP' with your Master Node's Public IP."
+            exit 1
+          fi
+          echo "All required secrets are present."
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+          MASTER_IP_DATA: ${{ secrets.K8S_MASTER_IP }}
+
       - name: Update Image Tags
         run: |
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
@@ -59,11 +72,9 @@ jobs:
       - name: Deploy to Kubernetes
         run: |
           MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
-          K8S_ARGS="--insecure-skip-tls-verify"
-          if [ ! -z "$MASTER_IP" ]; then
-            K8S_ARGS="$K8S_ARGS --server=https://$MASTER_IP:6443"
-            echo "Using remote master IP: $MASTER_IP"
-          fi
+          K8S_ARGS="--insecure-skip-tls-verify --server=https://$MASTER_IP:6443"
+          
+          echo "Deploying to Master IP: $MASTER_IP"
 
           kubectl apply -f k8s/namespace.yaml --validate=false $K8S_ARGS
           kubectl apply -f k8s/backend.yaml --validate=false $K8S_ARGS
@@ -77,10 +88,7 @@ jobs:
       - name: Verify Deployment
         run: |
           MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
-          K8S_ARGS="--insecure-skip-tls-verify"
-          if [ ! -z "$MASTER_IP" ]; then
-            K8S_ARGS="$K8S_ARGS --server=https://$MASTER_IP:6443"
-          fi
+          K8S_ARGS="--insecure-skip-tls-verify --server=https://$MASTER_IP:6443"
 
           kubectl rollout status deployment/backend -n shopmicro --timeout=180s $K8S_ARGS
           kubectl rollout status deployment/frontend -n shopmicro --timeout=180s $K8S_ARGS
