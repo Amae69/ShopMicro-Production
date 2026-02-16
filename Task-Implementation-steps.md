@@ -208,3 +208,21 @@ On ks8 master node i run `cat ~/.kube/config` to get the kube config data and pa
 
 ![github secret](./images/github%20secret.png)
 
+## CI/CD Pipeline Implementation
+I implemented a complete GitHub Actions workflow suite:
+
+- ci.yml
+: Triggers on Push/PR. Runs linting (Node/Python), Unit Tests, and builds/pushes Docker images to GHCR.
+
+![ci.yml](./images/ci%20pipeline%20success.png)
+
+- cd.yml
+: Triggers after CI success on main. Deploys the application to my Kubernetes cluster.
+
+![cd.yml](./images/cd.yml.png)
+
+- iac-ci.yml
+: Runs terraform fmt, terraform validate, tflint, and OPA policy checks on infrastructure changes.
+
+- drift-detection.yml
+: Runs daily at 8am to check for infrastructure drift. Status: ✅ Implemented. Requires Secrets setup in GitHub.

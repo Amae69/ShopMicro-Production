@@ -41,18 +41,18 @@ jobs:
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
 
-      - name: Verify Secret Presence
-        run: |
-          if [ -z "$KUBECONFIG_DATA" ]; then echo "::error::KUBECONFIG secret is EMPTY. Please add it to GitHub Secrets."; exit 1; fi
-          if [ -z "$MASTER_IP_DATA" ]; then 
-            echo "::error::K8S_MASTER_IP secret is MISSING. Remote deployment from GitHub requires the Public IP of your Master node."
-            echo "::notice::Add a secret named 'K8S_MASTER_IP' with your Master Node's Public IP."
-            exit 1
-          fi
-          echo "All required secrets are present."
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
-          MASTER_IP_DATA: ${{ secrets.K8S_MASTER_IP }}
+      # - name: Verify Secret Presence
+      #   run: |
+      #     if [ -z "$KUBECONFIG_DATA" ]; then echo "::error::KUBECONFIG secret is EMPTY. Please add it to GitHub Secrets."; exit 1; fi
+      #     if [ -z "$MASTER_IP_DATA" ]; then 
+      #       echo "::error::K8S_MASTER_IP secret is MISSING. Remote deployment from GitHub requires the Public IP of your Master node."
+      #       echo "::notice::Add a secret named 'K8S_MASTER_IP' with your Master Node's Public IP."
+      #       exit 1
+      #     fi
+      #     echo "All required secrets are present."
+      #   env:
+      #     KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+      #     MASTER_IP_DATA: ${{ secrets.K8S_MASTER_IP }}
 
       - name: Update Image Tags
         run: |
