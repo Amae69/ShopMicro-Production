@@ -3,93 +3,60 @@ name: ShopMicro CD
 on:
   workflow_run:
     workflows: ["ShopMicro CI"]
-    types:
-      - completed
-    branches:
-      - main
+    types: [completed]
+    branches: [main]
 
 jobs:
   deploy-dev:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     environment: development
-    
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up kubectl
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install kubectl
         uses: azure/setup-kubectl@v3
 
-      - name: Configure Kubeconfig
-        run: |
-          mkdir -p ~/.kube
-          # Use env variable to safely handle multiline secrets
-          if [ -z "$KUBECONFIG_DATA" ]; then
-            echo "Error: KUBECONFIG secret is empty"
-            exit 1
-          fi
-          
-          # Detect if it's base64 (contains no spaces)
-          if [[ ! "$KUBECONFIG_DATA" =~ [[:space:]] ]]; then
-            echo "Kubeconfig looks like base64, decoding..."
-            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
-          else
-            echo "Kubeconfig looks like plain text"
-            echo "$KUBECONFIG_DATA" > ~/.kube/config
-          fi
-          chmod 600 ~/.kube/config
+      - name: Configure kubeconfig
         env:
           KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p $HOME/.kube
+          echo "$KUBECONFIG_DATA" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
 
-      # - name: Verify Secret Presence
-      #   run: |
-      #     if [ -z "$KUBECONFIG_DATA" ]; then echo "::error::KUBECONFIG secret is EMPTY. Please add it to GitHub Secrets."; exit 1; fi
-      #     if [ -z "$MASTER_IP_DATA" ]; then 
-      #       echo "::error::K8S_MASTER_IP secret is MISSING. Remote deployment from GitHub requires the Public IP of your Master node."
-      #       echo "::notice::Add a secret named 'K8S_MASTER_IP' with your Master Node's Public IP."
-      #       exit 1
-      #     fi
-      #     echo "All required secrets are present."
-      #   env:
-      #     KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
-      #     MASTER_IP_DATA: ${{ secrets.K8S_MASTER_IP }}
+      - name: Verify Cluster Connection
+        run: |
+          kubectl cluster-info
 
       - name: Update Image Tags
         run: |
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          
-          # Update image names with lowercased repository
+
           sed -i "s|image: .*shopmicro-backend:.*|image: ghcr.io/${REPO_LOWER}-backend:${SHA_TAG}|g" k8s/backend.yaml
           sed -i "s|image: .*shopmicro-frontend:.*|image: ghcr.io/${REPO_LOWER}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
           sed -i "s|image: .*shopmicro-ml-service:.*|image: ghcr.io/${REPO_LOWER}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
-          
-          # Ensure imagePullPolicy is IfNotPresent
+
           sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/backend.yaml
           sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
           sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
 
       - name: Deploy to Kubernetes
         run: |
-          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
-          K8S_ARGS="--insecure-skip-tls-verify --server=https://$MASTER_IP:6443"
-          
-          echo "Deploying to Master IP: $MASTER_IP"
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/backend.yaml
+          kubectl apply -f k8s/frontend.yaml
+          kubectl apply -f k8s/ml-service.yaml
+          kubectl apply -f k8s/grafana.yaml
+          kubectl apply -f k8s/postgres.yaml
+          kubectl apply -f k8s/redis.yaml
+          kubectl apply -f k8s/ingress.yaml
 
-          kubectl apply -f k8s/namespace.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/backend.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/frontend.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/ml-service.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/grafana.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/postgres.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/redis.yaml --validate=false $K8S_ARGS
-          kubectl apply -f k8s/ingress.yaml --validate=false $K8S_ARGS
-          
       - name: Verify Deployment
         run: |
-          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
-          K8S_ARGS="--insecure-skip-tls-verify --server=https://$MASTER_IP:6443"
-
-          kubectl rollout status deployment/backend -n shopmicro --timeout=180s $K8S_ARGS
-          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s $K8S_ARGS
-          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s $K8S_ARGS
+          kubectl rollout status deployment/backend -n shopmicro --timeout=180s
+          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s
+          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s
