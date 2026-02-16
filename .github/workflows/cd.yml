@@ -55,13 +55,13 @@ jobs:
           kubectl apply -f k8s/redis.yaml
           kubectl apply -f k8s/ingress.yaml
           kubectl apply -f k8s/hpa.yaml
-          kubectl apply -f k8s/dashboards.yaml
-          kubectl apply -f k8s/grafana-datasources.yaml
-          kubectl apply -f k8s/loki.yaml
-          kubectl apply -f k8s/otel-collector.yaml
-          kubectl apply -f k8s/prometheus.yaml
-          kubectl apply -f k8s/prometheus-rules.yaml
-          kubectl apply -f k8s/tempo.yaml
+          kubectl apply -f k8s/observability/dashboards.yaml
+          kubectl apply -f k8s/observability/grafana-datasources.yaml
+          kubectl apply -f k8s/observability/loki.yaml
+          kubectl apply -f k8s/observability/otel-collector.yaml
+          kubectl apply -f k8s/observability/prometheus.yaml
+          kubectl apply -f k8s/observability/prometheus-rules.yaml
+          kubectl apply -f k8s/observability/tempo.yaml
 
       - name: Verify Deployment
         run: |
