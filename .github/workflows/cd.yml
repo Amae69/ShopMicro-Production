@@ -28,8 +28,9 @@ jobs:
           
           # If the user provided a MASTER_IP secret, force-replace it in the config
           # This helps if the KUBECONFIG secret still has the old private IP
-          if [ ! -z "${{ secrets.K8S_MASTER_IP }}" ]; then
-            sed -i "s|https://.*:6443|https://${{ secrets.K8S_MASTER_IP }}:6443|g" ~/.kube/config
+          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '\r\n ')
+          if [ ! -z "$MASTER_IP" ]; then
+            sed -i "s|https://.*:6443|https://$MASTER_IP:6443|g" ~/.kube/config
           fi
           
           chmod 600 ~/.kube/config
