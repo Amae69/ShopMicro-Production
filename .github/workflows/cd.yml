@@ -23,17 +23,23 @@ jobs:
       - name: Configure Kubeconfig
         run: |
           mkdir -p ~/.kube
-          # Create config from secret
-          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          # Use env variable to safely handle multiline secrets
+          if echo "$KUBECONFIG_DATA" | grep -q "^[A-Za-z0-9+/=]*$"; then
+            echo "$KUBECONFIG_DATA" | base64 -d > ~/.kube/config
+          else
+            echo "$KUBECONFIG_DATA" > ~/.kube/config
+          fi
           
-          # If the user provided a MASTER_IP secret, force-replace it in the config
-          # This helps if the KUBECONFIG secret still has the old private IP
-          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '\r\n ')
+          # Clean Master IP and perform safe replacement
+          MASTER_IP=$(echo "${{ secrets.K8S_MASTER_IP }}" | tr -d '[:space:]')
           if [ ! -z "$MASTER_IP" ]; then
-            sed -i "s|https://.*:6443|https://$MASTER_IP:6443|g" ~/.kube/config
+            # Target specifically the server line and avoid greedy matches
+            sed -i "s|server: https://[^ ]*|server: https://$MASTER_IP:6443|g" ~/.kube/config
           fi
           
           chmod 600 ~/.kube/config
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
 
       - name: Update Image Tags
         run: |
