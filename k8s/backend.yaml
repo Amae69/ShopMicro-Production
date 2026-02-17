@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: backend
   namespace: shopmicro
+  labels:
+    app: backend
 spec:
   replicas: 2
   selector:
@@ -14,79 +16,55 @@ spec:
         app: backend
     spec:
       containers:
-      - name: backend
-        image: ghcr.io/amae69-backend:${SHA_TAG}
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: PORT
-          value: "3001"
-        - name: DB_HOST
-          value: "postgres"
-        - name: DB_NAME
-          value: "shopmicro"
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: shopmicro-secrets
-              key: POSTGRES_USER
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: shopmicro-secrets
-              key: POSTGRES_PASSWORD
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: shopmicro-secrets
-              key: REDIS_PASSWORD
-        - name: REDIS_URL
-          value: "redis://:$(REDIS_PASSWORD)@redis:6379"
-        - name: OTEL_SERVICE_NAME
-          value: "shopmicro-backend"
-        ports:
-        - containerPort: 3001
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3001
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - backend
-              topologyKey: "kubernetes.io/hostname"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend
-  namespace: shopmicro
-spec:
-  selector:
-    app: backend
-  ports:
-  - port: 3001
-    targetPort: 3001
+        - name: backend
+          image: ghcr.io/amae69/shopmicro-production-backend:${SHA_TAG}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "8080"
+            - name: DB_HOST
+              value: postgres
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: shopmicro-secrets
+                  key: POSTGRES_DB
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: shopmicro-secrets
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shopmicro-secrets
+                  key: POSTGRES_PASSWORD
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shopmicro-secrets
+                  key: REDIS_URL
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
