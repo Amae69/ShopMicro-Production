@@ -13,15 +13,17 @@ spec:
       labels:
         app: frontend
     spec:
+      initContainers:
+      - name: wait-for-backend
+        image: busybox
+        command: ['sh', '-c', 'until nc -z backend 3001; do echo waiting for backend; sleep 5; done']
       containers:
       - name: frontend
-        image: shopmicro-frontend:latest
-        imagePullPolicy: Never
+        image: ghcr.io/your-repo/shopmicro-frontend:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: REACT_APP_BACKEND_URL
           value: "http://backend:3001"
-        - name: OTEL_SERVICE_NAME
-          value: "shopmicro-frontend"
         ports:
         - containerPort: 3000
         resources:
@@ -31,15 +33,3 @@ spec:
           limits:
             cpu: "200m"
             memory: "256Mi"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend
-  namespace: shopmicro
-spec:
-  selector:
-    app: frontend
-  ports:
-  - port: 3000
-    targetPort: 3000

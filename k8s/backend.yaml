@@ -13,10 +13,14 @@ spec:
       labels:
         app: backend
     spec:
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox
+        command: ['sh', '-c', 'until nc -z postgres 5432; do echo waiting for postgres; sleep 5; done']
       containers:
       - name: backend
-        image: shopmicro-backend:latest
-        imagePullPolicy: Never
+        image: ghcr.io/your-repo/shopmicro-backend:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: NODE_ENV
           value: "production"
@@ -25,7 +29,10 @@ spec:
         - name: DB_HOST
           value: "postgres"
         - name: DB_NAME
-          value: "shopmicro"
+          valueFrom:
+            secretKeyRef:
+              name: shopmicro-secrets
+              key: POSTGRES_DB
         - name: DB_USER
           valueFrom:
             secretKeyRef:
@@ -43,8 +50,6 @@ spec:
               key: REDIS_PASSWORD
         - name: REDIS_URL
           value: "redis://:$(REDIS_PASSWORD)@redis:6379"
-        - name: OTEL_SERVICE_NAME
-          value: "shopmicro-backend"
         ports:
         - containerPort: 3001
         livenessProbe:
@@ -66,30 +71,3 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - backend
-              topologyKey: "kubernetes.io/hostname"
-      # Example Node Selector (Ensure your nodes have this label if you use it, otherwise comment out)
-      # nodeSelector:
-      #   role: worker
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: backend
-  namespace: shopmicro
-spec:
-  selector:
-    app: backend
-  ports:
-  - port: 3001
-    targetPort: 3001

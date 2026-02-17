@@ -1,3 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: shopmicro
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS products (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      price NUMERIC(10,2) NOT NULL
+    );
+
+    INSERT INTO products (name, price) VALUES
+    ('Mechanical Keyboard', 79.99),
+    ('4K Monitor', 299.99),
+    ('USB-C Dock', 129.99)
+    ON CONFLICT DO NOTHING;
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: shopmicro
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -9,7 +41,6 @@ spec:
   selector:
     matchLabels:
       app: postgres
-
   template:
     metadata:
       labels:
@@ -20,7 +51,6 @@ spec:
         image: postgres:16
         ports:
         - containerPort: 5432
-
         env:
         - name: POSTGRES_USER
           valueFrom:
@@ -37,19 +67,16 @@ spec:
             secretKeyRef:
               name: shopmicro-secrets
               key: POSTGRES_DB
-
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
         - name: init-script
           mountPath: /docker-entrypoint-initdb.d/init.sql
           subPath: init.sql
-
       volumes:
       - name: init-script
         configMap:
           name: postgres-init
-
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage
@@ -59,17 +86,3 @@ spec:
       resources:
         requests:
           storage: 1Gi
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: shopmicro
-spec:
-  clusterIP: None
-  selector:
-    app: postgres
-  ports:
-  - port: 5432
-    targetPort: 5432

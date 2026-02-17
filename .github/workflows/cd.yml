@@ -44,15 +44,36 @@ jobs:
           sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
           sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
 
-      - name: Deploy to Kubernetes
+      - name: Deploy Namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Deploy Postgres
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/backend.yaml
-          kubectl apply -f k8s/frontend.yaml
-          kubectl apply -f k8s/ml-service.yaml
-          kubectl apply -f k8s/grafana.yaml
-          kubectl apply -f k8s/postgres-init-configmap.yaml
           kubectl apply -f k8s/postgres.yaml
+          echo "Waiting for Postgres to be ready..."
+          kubectl wait --for=condition=Ready pod -l app=postgres -n shopmicro --timeout=180s
+
+      - name: Deploy Backend
+        run: |
+          kubectl apply -f k8s/backend.yaml
+          echo "Waiting for Backend to be ready..."
+          kubectl rollout status deployment/backend -n shopmicro --timeout=180s
+
+      - name: Deploy ML Service
+        run: |
+          kubectl apply -f k8s/ml-service.yaml
+          echo "Waiting for ML Service to be ready..."
+          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s
+
+      - name: Deploy Frontend
+        run: |
+          kubectl apply -f k8s/frontend.yaml
+          echo "Waiting for Frontend to be ready..."
+          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s
+
+      - name: Deploy Observability & Other Services
+        run: |
+          kubectl apply -f k8s/grafana.yaml
           kubectl apply -f k8s/redis.yaml
           kubectl apply -f k8s/ingress.yaml
           kubectl apply -f k8s/observability/dashboards.yaml
@@ -61,19 +82,3 @@ jobs:
           kubectl apply -f k8s/observability/prometheus.yaml
           kubectl apply -f k8s/observability/prometheus-rules.yaml
           kubectl apply -f k8s/observability/tempo.yaml
-
-      - name: Verify Postgres First
-        run: |
-          kubectl rollout status statefulset/postgres -n shopmicro --timeout=300s
-
-      - name: Verify Backend Deployment
-        run: |
-          kubectl rollout status deployment/backend -n shopmicro --timeout=300s
-
-      - name: Verify Frontend Deployment
-        run: |
-          kubectl rollout status deployment/frontend -n shopmicro --timeout=300s
-
-      - name: Verify ML Service Deployment
-        run: |
-          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=300s
