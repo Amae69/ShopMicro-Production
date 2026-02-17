@@ -51,6 +51,7 @@ jobs:
           kubectl apply -f k8s/frontend.yaml
           kubectl apply -f k8s/ml-service.yaml
           kubectl apply -f k8s/grafana.yaml
+          kubectl apply -f k8s/postgres-init-configmap.yaml
           kubectl apply -f k8s/postgres.yaml
           kubectl apply -f k8s/redis.yaml
           kubectl apply -f k8s/ingress.yaml
@@ -61,8 +62,18 @@ jobs:
           kubectl apply -f k8s/observability/prometheus-rules.yaml
           kubectl apply -f k8s/observability/tempo.yaml
 
-      - name: Verify Deployment
+      - name: Verify Postgres First
         run: |
-          kubectl rollout status deployment/backend -n shopmicro --timeout=180s
-          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s
-          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s
+          kubectl rollout status statefulset/postgres -n shopmicro --timeout=300s
+
+      - name: Verify Backend Deployment
+        run: |
+          kubectl rollout status deployment/backend -n shopmicro --timeout=300s
+
+      - name: Verify Frontend Deployment
+        run: |
+          kubectl rollout status deployment/frontend -n shopmicro --timeout=300s
+
+      - name: Verify ML Service Deployment
+        run: |
+          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=300s
