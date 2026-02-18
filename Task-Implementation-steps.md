@@ -43,7 +43,7 @@ terraform init
 I already have the following:
 - Ansible installed in my local machine via wsl. Run to check: `ansible --version`
 
-![ansible installed](./images/ansible%20version.png)
+![ansible installed](./images/ansible%20installed.png)
 
 ### Steps
 
@@ -226,3 +226,5 @@ I implemented a complete GitHub Actions workflow suite:
 
 - drift-detection.yml
 : Runs daily at 8am to check for infrastructure drift. Status: ✅ Implemented. Requires Secrets setup in GitHub.
+
+![drift detection](./images/infrastructure%20drift%20detection.png)
