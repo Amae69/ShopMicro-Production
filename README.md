@@ -4,7 +4,7 @@
 ShopMicro is a cloud-native e-commerce platform designed to demonstrate a robust DevOps and Platform Engineering toolchain. It consists of a React frontend, a Node.js backend API, a Python-based ML recommendation service, and persistent data stores using PostgreSQL and Redis. The platform is designed for high availability, observability, and automated deployment on Kubernetes.
 
 ## 2. High-Level Architecture Diagram
-![ShopMicro Architecture](architecture.png)
+![ShopMicro Architecture](./images/architecture.png)
 
 ## 3. Prerequisites
 - **Docker & Docker Compose**: For local development.
