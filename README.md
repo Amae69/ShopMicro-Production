@@ -6,17 +6,6 @@ ShopMicro is a cloud-native e-commerce platform designed to demonstrate a robust
 ## 2. High-Level Architecture Diagram
 ![ShopMicro Architecture](architecture.png)
 
-### Mermaid Diagram
-```mermaid
-graph TD
-    User((User)) -->|HTTP| Ingress[Ingress Controller]
-    Ingress -->|/| Frontend[Frontend (React)]
-    Ingress -->|/api| Backend[Backend API (Node.js)]
-    Frontend -->|/recommendations| ML[ML Service (Python)]
-    Backend -->|Read/Write| DB[(PostgreSQL)]
-    Backend -->|Cache| Cache[(Redis)]
-```
-
 ## 3. Prerequisites
 - **Docker & Docker Compose**: For local development.
 - **Kubernetes Cluster**: (e.g., Minikube, Kind, or EKS) for deployment.
@@ -62,6 +51,7 @@ To deploy to a Kubernetes cluster:
 (Placeholder for actual observability setup)
 - **Metrics**: Accessed via `/metrics` endpoints.
 - **Logging**: stdout/stderr logs aggregated by the container runtime.
+- **SLIs & SLOs**: Defined in [SLI_SLO.md](SLI_SLO.md).
 
 ## 7. Security Controls
 - **Secrets Management**: Database credentials should be managed via Kubernetes Secrets (not committed to git).
