@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node --require ./instrumentation.js server.js"
+    "start": "node --require ./instrumentation.js server.js",
+    "dev": "nodemon --require ./instrumentation.js server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -13,5 +14,8 @@
     "@opentelemetry/auto-instrumentations-node": "^0.47.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.51.0",
     "@opentelemetry/exporter-metrics-otlp-grpc": "^0.51.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
