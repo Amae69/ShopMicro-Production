@@ -246,3 +246,17 @@ confirm: `kubectl get pods -n ingress-nginx`
 confirm: `kubectl get ingress -n shopmicro`
 
 ![ingress](./images/get%20ingress.png)
+
+Test the frontend is working through ingress
+
+`curl -H "Host: shopmicro.local" http://a8d8611eb84e74f7f883a0297dd32158-ebd7925954c29321.elb.eu-west-2.amazonaws.com`
+
+![frontend](./images/)
+
+Test the backend is working through ingress
+
+`curl -H "Host: shopmicro.local" http://a8d8611eb84e74f7f883a0297dd32158-ebd7925954c29321.elb.eu-west-2.amazonaws.com/api/health`
+
+![backend](./images/test%20backend%20using%20ingress.png)
+
+

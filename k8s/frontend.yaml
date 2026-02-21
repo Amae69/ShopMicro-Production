@@ -25,7 +25,7 @@ spec:
         - name: REACT_APP_BACKEND_URL
           value: "http://backend:3001"
         ports:
-        - containerPort: 3000
+        - containerPort: 80
         resources:
           requests:
             cpu: "100m"
@@ -46,4 +46,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 3000
+      targetPort: 80
