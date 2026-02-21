@@ -26,5 +26,7 @@
 
 ## Next Steps for User
 1. **Local Test**: Run `docker-compose up --build` to see the app running locally.
-2. **Kubernetes Deploy**: Follow `DEPLOYMENT.md` to deploy to your AWS/EC2 cluster.
+2. **Kubernetes Deploy**: Follow `DEPLOYMENT.md` to deploy to your AWS/EKS cluster.
+   - **MANDATORY**: Install the **Amazon EBS CSI Driver** add-on in your EKS cluster console (EKS > Clusters > [Cluster] > Add-ons).
+   - **MANDATORY**: Ensure your node IAM role has `AmazonEBSCSIDriverPolicy` attached.
 3. **Infrastructure**: Fill in `infrastructure/terraform/main.tf` with actual AWS resources.
