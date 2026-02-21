@@ -16,7 +16,7 @@ const pool = new Pool({
 const cache = redis.createClient({
   url: process.env.REDIS_URL || "redis://redis:6379",
 });
-cache.connect().catch(() => {});
+cache.connect().catch(() => { });
 
 app.get("/health", async (_req, res) => {
   res.json({ status: "ok", service: "backend" });
@@ -34,4 +34,5 @@ app.get("/products", async (_req, res) => {
   }
 });
 
-app.listen(8080, () => console.log("backend listening on 8080"));
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log(`backend listening on ${PORT}`));
