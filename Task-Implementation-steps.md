@@ -219,7 +219,11 @@ I implemented a complete GitHub Actions workflow suite:
 - cd.yml
 : Triggers after CI success on main. Deploys the application to my Kubernetes cluster.
 
-![cd.yml](./images/cd.yml.png)
+![cd.yml](./images/cd%20deploy%20to%20eks.png)
+
+`kubectl get pod -n shopmicro` to check running pod on cluster
+
+![kubectl get pod](./images/get%20pods.png)
 
 - iac-ci.yml
 : Runs terraform fmt, terraform validate, tflint, and OPA policy checks on infrastructure changes.

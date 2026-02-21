@@ -138,3 +138,19 @@ jobs:
           kubectl apply -f k8s/observability/prometheus.yaml
           kubectl apply -f k8s/observability/prometheus-rules.yaml
           kubectl apply -f k8s/observability/tempo.yaml
+          
+          echo "Waiting for Loki to be ready..."
+          if ! kubectl rollout status deployment/loki -n shopmicro --timeout=60s; then
+            echo "--- LOKI DIAGNOSTICS START ---"
+            kubectl describe pods -l app=loki -n shopmicro
+            kubectl logs -l app=loki -n shopmicro --tail=100
+            echo "--- LOKI DIAGNOSTICS END ---"
+          fi
+
+          echo "Waiting for Tempo to be ready..."
+          if ! kubectl rollout status deployment/tempo -n shopmicro --timeout=60s; then
+            echo "--- TEMPO DIAGNOSTICS START ---"
+            kubectl describe pods -l app=tempo -n shopmicro
+            kubectl logs -l app=tempo -n shopmicro --tail=100
+            echo "--- TEMPO DIAGNOSTICS END ---"
+          fi
