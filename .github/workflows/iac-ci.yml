@@ -12,6 +12,7 @@ jobs:
       run:
         working-directory: infrastructure/terraform
 
+    # Infrastructure CI: Validates Terraform configuration and runs Policy-as-Code checks.
     steps:
     - uses: actions/checkout@v3
 
@@ -34,6 +35,7 @@ jobs:
       run: terraform init -backend=false
 
     - name: Terraform Validate
+      # Ensures the configuration is syntactically valid and internally consistent.
       run: terraform validate
 
     - name: Setup TFLint
@@ -42,6 +44,7 @@ jobs:
         tflint_version: v0.44.1
 
     - name: Run TFLint
+      # Lints the Terraform code to identify potential best practice violations.
       run: tflint --init && tflint
 
     - name: Terraform Plan
@@ -60,5 +63,6 @@ jobs:
         chmod 755 ./opa
 
     - name: Run OPA Policies (Policy as Code)
+      # Evaluates the planned changes against security and compliance policies using Open Policy Agent.
       if: steps.plan.outcome == 'success'
       run: ./opa eval --data policies/main.rego --input tfplan.json "data.terraform.analysis.deny" --format pretty

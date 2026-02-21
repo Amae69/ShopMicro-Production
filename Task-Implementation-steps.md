@@ -1,19 +1,23 @@
-## Infrastructure Provisioning (Terraform)
+## **Task Documentation**
+
+This Document shows step-by-step task done with screenshot
+
+### **Infrastructure Provisioning (Terraform)**
 
 ### Prerequisites
 
 I already have the following:
-- AWS Account
-- AWS CLI installed in my local machine. Run to check: `aws --version`
-- Terraform installed in my local machine. Run to check: `terraform version`
+- **AWS Account**
+- **AWS CLI installed in my local machine. Run to check:** `aws --version`
+- **Terraform installed in my local machine. Run to check:** `terraform version`
 
 ![terraform version](./images/checked%20terraform%20version%20.png)
 
-In my AWS Account, I created an access key and secret key for terraform to use.
+**In my AWS Account, I created an access key and secret key for terraform to use.**
 
 ![access key](./images/aws%20access%20key.png)
 
-Then I configure the aws cli to use the access key and secret key.
+**Then I configure the aws cli to use the access key and secret key.**
 
 `aws configure`
 
@@ -30,7 +34,7 @@ terraform init
 
 ![terraform init](./images/terraform%20init.png)
 
-2. Apply Terraform `terraform apply`
+2. **Apply Terraform `terraform apply`**
 
 ![terraform apply](./images/terraform%20apply.png)
 
@@ -41,17 +45,18 @@ terraform init
 ### Prerequisites
 
 I already have the following:
-- Ansible installed in my local machine via wsl. Run to check: `ansible --version`
+
+- **Ansible installed in my local machine via wsl. Run to check:** `ansible --version`
 
 ![ansible installed](./images/ansible%20installed.png)
 
 ### Steps
 
-1. Goto the ansible folder and update the inventory file `cd infrastructure/ansible`
+**1. Goto the ansible folder and update the inventory file `cd infrastructure/ansible`**
 
 ![ansible inventory](./images/ansible%20inventory.png)
 
-Create a playbook to setup kubernetes cluster on the EC2 instances.
+**Create a playbook to setup kubernetes cluster on the EC2 instances.**
 
 ```
 ---
@@ -194,13 +199,21 @@ Create a playbook to setup kubernetes cluster on the EC2 instances.
       when: hostvars['K8S_TOKEN_HOLDER'] is defined
 ```
 
-2. Run the playbook `ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml`
+**2. Run the playbook `ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini playbook.yml`**
 
 ![ansible playbook run](./images/ansible%20playbook%20run.png)
 
-3. Check the status of the cluster `kubectl get nodes`
+**3. Check the status of the cluster created in ec2 `kubectl get nodes`**
 
 ![kubectl get nodes](./images/get%20nodes.png)
+
+**NOTE: I terminate the EC2 instance and use AWS EKS Cluster**
+
+**4. AWS EKS Cluster**
+
+![eks cluster](./images/eks-cluster%20ready.png)
+
+![eks cluster console](./images/eks%20cluster%20console.png)
 
 On my GitHub, I created a repository named ShopMicro-Production and added my kube congig data and AWS access key and secret key as secrets in the repository settings.
 
@@ -211,13 +224,15 @@ On ks8 master node i run `cat ~/.kube/config` to get the kube config data and pa
 ## CI/CD Pipeline Implementation
 I implemented a complete GitHub Actions workflow suite:
 
-- ci.yml
-: Triggers on Push/PR. Runs linting (Node/Python), Unit Tests, and builds/pushes Docker images to GHCR.
+- **ci.yml:**
+
+Triggers on Push/PR. Runs linting (Node/Python), Unit Tests, and builds/pushes Docker images to GHCR.
 
 ![ci.yml](./images/ci%20pipeline%20success.png)
 
-- cd.yml
-: Triggers after CI success on main. Deploys the application to my Kubernetes cluster.
+- **cd.yml:**
+
+Triggers after CI success on main. Deploys the application to my Kubernetes cluster.
 
 ![cd.yml](./images/cd%20deploy%20to%20eks.png)
 
@@ -225,15 +240,21 @@ I implemented a complete GitHub Actions workflow suite:
 
 ![kubectl get pod](./images/get%20pods.png)
 
-- iac-ci.yml
-: Runs terraform fmt, terraform validate, tflint, and OPA policy checks on infrastructure changes.
+- **iac-ci.yml:**
 
-- drift-detection.yml
-: Runs daily at 8am to check for infrastructure drift. Status: ✅ Implemented. Requires Secrets setup in GitHub.
+Runs terraform fmt, terraform validate, tflint, and OPA policy checks on infrastructure changes.
+
+- **drift-detection.yml:**
+
+Runs daily at 8am to check for infrastructure drift. Status: ✅ Implemented. Requires Secrets setup in GitHub.
 
 ![drift detection](./images/infrastructure%20drift%20detection.png)
 
-- Install NGINX Ingress Controller: The Ingress resource **(k8s/ingress.yaml)** requires a controller to work. Install it on EKS
+## **Configure ingress**
+
+**Install NGINX Ingress Controller:**
+
+The Ingress resource **(k8s/ingress.yaml)** requires a controller to work. Install it on EKS
 
 `kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/aws/deploy.yaml`
 
@@ -241,22 +262,95 @@ confirm: `kubectl get pods -n ingress-nginx`
 
 ![ingress controller](./images/ingress%20controller.png)
 
-- Apply Ingress Resource: Apply the ingress.yaml file to expose the application externally.
+**Apply Ingress Resource: Apply the ingress.yaml file to expose the application externally.**
 
 confirm: `kubectl get ingress -n shopmicro`
 
 ![ingress](./images/get%20ingress.png)
 
-Test the frontend is working through ingress
+**Test the frontend is working through ingress:**
 
 `curl -H "Host: shopmicro.local" http://a8d8611eb84e74f7f883a0297dd32158-ebd7925954c29321.elb.eu-west-2.amazonaws.com`
 
-![frontend](./images/)
+![frontend](./images/test%20frontend%20using%20ingress.png)
 
-Test the backend is working through ingress
+**Test the backend is working through ingress**
 
 `curl -H "Host: shopmicro.local" http://a8d8611eb84e74f7f883a0297dd32158-ebd7925954c29321.elb.eu-west-2.amazonaws.com/api/health`
 
 ![backend](./images/test%20backend%20using%20ingress.png)
 
+## **Horizontal Pod Auto Scaling**: 
 
+The HPA is now deployed. Check its status (requires `metrics-server`):
+
+NOTE: if the cpu, or memory threshold is reached, pod will automatically scaled till it get to its set maxpods
+
+```
+kubectl get hpa -n shopmicro
+```
+
+![HPA](./images/get%20hpa.png)
+
+## **Monitoring (Prometheus & Grafana)**
+
+Using portforwarding to test prometheus and grafan access on the web, given that their services are clusterIP and can only be access internally
+
+**Portforward prometheus: `kubectl port-forward svc/prometheus 9090:9090 -n shopmicro`**
+
+On browser: http://localhost:9090
+
+![Prometheus](./images/prometheus.png)
+
+**Portforward grafana: `kubectl port-forward svc/grafana 3005:3000 -n shopmicro`**
+
+On browser: http://localhost:3005
+
+![grafana-dashboard](./images/grafana%20dashboard.png)
+
+## **Rollback Proof Demonstration**
+
+To demonstrate a successful rollback, I performed the following steps to simulate a failed deployment and recover:
+
+1.  **Deploy a "Broken" Version**:
+
+    Manually update the backend to use a non-existent image tag. This will trigger a rolling update that fails (ImagePullBackOff).
+
+    ```bash
+    kubectl set image deployment/backend backend=ghcr.io/amae69/shopmicro-production-backend:broken-v1 -n shopmicro
+    ```
+
+2.  **Observe the Failure**:
+
+    Check the rollout status. You will see it hang or show errors.
+
+    ```bash
+    kubectl rollout status deployment/backend -n shopmicro
+    # Pods will likely show 'ImagePullBackOff'
+    kubectl get pods -n shopmicro
+    ```
+    **Screenshot showing "Evidence of Failure"**.
+
+    ![rollback failure](./images/rollback%20failure.png)
+
+3.  **Perform the Rollback**:
+
+    Use the `undo` command to revert to the last stable state.
+
+    ```bash
+    kubectl rollout undo deployment/backend -n shopmicro
+    ```
+
+4.  **Verify Restoration**:
+
+    Confirm the deployment is back to a healthy state.
+
+    ```bash
+    kubectl rollout status deployment/backend -n shopmicro
+    kubectl get pods -n shopmicro
+    ```
+    **Screenshot showing "Rollback Proof"**.
+
+    ![rollback-proof](./images/rollback%20success.png)
+
+    ### **END ...**

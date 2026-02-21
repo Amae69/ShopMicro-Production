@@ -19,8 +19,14 @@ venv/
 .DS_Store
 
 # Kubernetes Secrets
-k8s/secrets.yaml
+k8s/secrets.yaml.template
 
 # IDEs
 .vscode/
 .idea/
+
+# Project Description
+FINAL_CAPSTONE_ASSIGNMENT.md
+
+DEPLOYMENT.md
+

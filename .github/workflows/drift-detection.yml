@@ -12,6 +12,7 @@ jobs:
       run:
         working-directory: infrastructure/terraform
 
+    # Drift Detection: Checks for differences between actual cloud state and defined Terraform code.
     steps:
     - uses: actions/checkout@v3
 
@@ -31,13 +32,14 @@ jobs:
     - name: Check for Drift
       id: plan
       run: |
-        # Return success (0) if no changes, failure (2) if changes (drift)
+        # Return success (0) if no changes, failure (2) if changes or 'drift' are found.
         terraform plan -detailed-exitcode
       continue-on-error: true
       # You would need AWS Credentials here
 
     - name: Notify on Drift
+      # Triggers if the detailed-exitcode returns 2, indicating a mismatch.
       if: steps.plan.outputs.exitcode == 2
       run: |
         echo "::error::Infrastructure Drift Detected! Terraform Plan shows changes."
-        # In a real setup, send Slack/Teams notification or open an Issue
+        # Note: In a production setup, this would trigger an alert (e.g., Slack, Email).

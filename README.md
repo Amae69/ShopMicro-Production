@@ -1,64 +1,112 @@
 # ShopMicro - E-commerce Microservices Platform
 
 ## 1. Problem Statement and Architecture Summary
-ShopMicro is a cloud-native e-commerce platform designed to demonstrate a robust DevOps and Platform Engineering toolchain. It consists of a React frontend, a Node.js backend API, a Python-based ML recommendation service, and persistent data stores using PostgreSQL and Redis. The platform is designed for high availability, observability, and automated deployment on Kubernetes.
+ShopMicro is a cloud-native e-commerce platform designed to demonstrate a robust DevOps and Platform Engineering toolchain. The objective is to provide a scalable, secure, and observable environment for microservices.
+- **Frontend**: React/Vite (Nginx)
+- **Backend API**: Node.js/Express
+- **ML Service**: Python/Flask (Recommendations)
+- **Data Store**: PostgreSQL (StatefulSet) & Redis (Cache)
+- **Infrastructure**: AWS EKS,AWS EC2 provisioned via Terraform and k8s cluster configured in Ec2 via Ansible.
 
 ## 2. High-Level Architecture Diagram
 ![ShopMicro Architecture](./images/architecture.png)
 
-## 3. Prerequisites
-- **Docker & Docker Compose**: For local development.
-- **Kubernetes Cluster**: (e.g., Minikube, Kind, or EKS) for deployment.
-- **kubectl**: Configured to talk to your cluster.
-- **Terraform**: For infrastructure provisioning.
-- **Ansible**: For configuration management.
+## 3. Prerequisites and Tooling Versions
+- **Kubernetes**: v1.25+ (Targeted for AWS EKS)
+- **kubectl**: v1.27+
+- **Terraform**: v1.5.0+
+- **AWS CLI**: v2.11+
+- **Node.js**: v20.x
+- **Python**: v3.12+
+- **Docker**: v24.x+
 
-## 4. Local Development (Quick Start)
-To run the entire stack locally using Docker Compose:
+## 4. Exact Deploy Commands
 
+### A. Infrastructure (Terraform)
 ```bash
-docker-compose up --build
+cd infrastructure/terraform
+terraform init
+terraform apply -auto-approve
 ```
-Access the application at `http://localhost:3000`.
 
-## 5. Deployment Commands
-To deploy to a Kubernetes cluster:
+### B. Kubernetes Deployment
+```bash
+# 1. Namespace & Secrets
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secrets.yaml.template
 
-1. **Create Namespace**
-   ```bash
-   kubectl apply -f k8s/namespace.yaml
-   ```
+# 2. Data Layer
+kubectl apply -f k8s/redis.yaml
+kubectl apply -f k8s/postgres.yaml
 
-2. **Deploy Data Layer (Postgres & Redis)**
-   ```bash
-   kubectl apply -f k8s/redis.yaml
-   kubectl apply -f k8s/postgres.yaml
-   ```
+# 3. Application Services
+kubectl apply -f k8s/backend.yaml
+kubectl apply -f k8s/ml-service.yaml
+kubectl apply -f k8s/frontend.yaml
 
-3. **Deploy Microservices**
-   ```bash
-   kubectl apply -f k8s/backend.yaml
-   kubectl apply -f k8s/ml-service.yaml
-   kubectl apply -f k8s/frontend.yaml
-   ```
+# 4. Access Control (Ingress)
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/aws/deploy.yaml
+kubectl apply -f k8s/ingress.yaml
 
-4. **Setup Ingress**
-   ```bash
-   kubectl apply -f k8s/ingress.yaml
-   ```
+# 5. Scaling & Observability
+kubectl apply -f k8s/hpa.yaml
+kubectl apply -f k8s/grafana.yaml
+kubectl apply -f k8s/observability/
+```
 
-## 6. Observability
-(Placeholder for actual observability setup)
-- **Metrics**: Accessed via `/metrics` endpoints.
-- **Logging**: stdout/stderr logs aggregated by the container runtime.
-- **SLIs & SLOs**: Defined in [SLI_SLO.md](SLI_SLO.md).
+## 5. Exact Test/Verification Commands
 
-## 7. Security Controls
-- **Secrets Management**: Database credentials should be managed via Kubernetes Secrets (not committed to git).
-- **Network Policies**: Ingress provides a single entry point.
+### Pod Health
+```bash
+kubectl get pods -n shopmicro
+```
 
-## 8. Backup & Restore
-- **Postgres**: Use `pg_dump` on the postgres container for snapshots.
+### Connectivity Verification
+```bash
+# Frontend via LoadBalancer Service
+kubectl get svc frontend -n shopmicro
 
-## 9. Known Limitations
-- This is a starter implementation. Production setup requires real secrets management (Vault/AWS Secrets Manager), full CI/CD pipelines, and comprehensive monitoring.
+# Health Check via Ingress Rewrite
+INGRESS_URL=$(kubectl get ingress shopmicro-ingress -n shopmicro -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+curl -H "Host: shopmicro.local" http://$INGRESS_URL/api/health
+```
+
+### Scaling Test
+```bash
+# Monitor HPA
+kubectl get hpa -w -n shopmicro
+```
+
+## 6. Observability Usage Guide
+- **Grafana Dashboards**: Access via `http://<node-ip>:3000` (NodePort) or Ingress.
+  - *Login*: `admin` / `admin`
+- **Metrics**: Prometheus scrapes at `/metrics` across all services.
+- **Logs**: Loki aggregates all container logs. Query via Grafana "Explore" tab (Source: Loki).
+- **Traces**: Tempo captures spans. Search for TraceIDs in Grafana (Source: Tempo).
+
+## 7. Rollback Procedure
+If a deployment fails, revert to the previous stable version:
+```bash
+kubectl rollout undo deployment/backend -n shopmicro
+kubectl rollout undo deployment/frontend -n shopmicro
+kubectl rollout undo deployment/ml-service-deployment -n shopmicro
+```
+
+## 8. Security Controls Implemented
+- **Namespace Isolation**: All resources reside in the `shopmicro` namespace.
+- **Least Privilege**: Postgres uses `PGDATA` subdirectories for volume safety.
+- **Volume Security**: `securityContext` with `fsGroup: 10001` configured for Loki/Tempo.
+- **Secrets Management**: Sensitive data injected via K8s Secrets.
+- **Ingress Controller**: Centralized entry point with path-based routing.
+
+## 9. Backup/Restore Procedure
+Refer to the detailed runbooks:
+- [Postgres Backup/Restore](./runbooks/POSTGRES_BACKUP_RESTORE.md)
+- [Incident Runbook](./runbooks/INCIDENT_RUNBOOK.md)
+
+## 10. Known Limitations and Next Improvements
+- **Limitations**: Currently uses standard `gp2` storage; production may require `gp3` or EFS for multi-node writes.
+- **Improvements**: 
+  - Integration with AWS Secrets Manager for secret rotation.
+  - Blue/Green deployment strategy via ArgoCD.
+  - Enhanced WAF integration on the Ingress Load Balancer.

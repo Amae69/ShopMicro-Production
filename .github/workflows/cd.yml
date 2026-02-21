@@ -16,6 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      # Authentication: Setup connection to the AWS account.
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -23,15 +24,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Connectivity: Point kubectl to the correct EKS cluster.
       - name: Update Kubeconfig
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
+      # Confirmation: Ensure the cluster is reachable and nodes are healthy.
       - name: Verify Cluster Connection
         run: |
           kubectl cluster-info
           kubectl get nodes
 
+      # Manifest Preparation: Inject the latest built image tag into the K8s manifests.
       - name: Update Image Tags
         run: |
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
@@ -42,7 +46,7 @@ jobs:
           sed -i "s|\${SHA_TAG}|${SHA_TAG}|g" k8s/frontend.yaml
           sed -i "s|\${SHA_TAG}|${SHA_TAG}|g" k8s/ml-service.yaml
 
-          # Ensure ImagePullPolicy is set to IfNotPresent
+          # Ensure ImagePullPolicy is set to IfNotPresent to avoid unnecessary downloads
           sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/backend.yaml
           sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
           sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
@@ -53,6 +57,7 @@ jobs:
       - name: Deploy Secrets
         run: kubectl apply -f k8s/secrets.yaml.template
 
+      # Stateful Deployment: Deploy Postgres with specialized logic for storage path migration.
       - name: Deploy Postgres
         run: |
           # Proactively delete PVCs using the old 'local-path' storage class if they exist
@@ -91,6 +96,7 @@ jobs:
             exit 1
           fi
 
+      # Stateless Backend: Deploy the core API.
       - name: Deploy Backend
         run: |
           kubectl apply -f k8s/backend.yaml
@@ -103,6 +109,7 @@ jobs:
             exit 1
           fi
 
+      # Stateless ML Service: Deploy the Flask recommendation engine.
       - name: Deploy ML Service
         run: |
           kubectl apply -f k8s/ml-service.yaml
@@ -115,6 +122,7 @@ jobs:
             exit 1
           fi
 
+      # Stateless Frontend: Deploy the React application.
       - name: Deploy Frontend
         run: |
           kubectl apply -f k8s/frontend.yaml
@@ -127,6 +135,7 @@ jobs:
             exit 1
           fi
 
+      # Support Stack: Deploy Redis, Ingress, HPA, and the full LGTM observability stack.
       - name: Deploy Observability & Other Services
         run: |
           kubectl apply -f k8s/grafana.yaml
@@ -140,6 +149,7 @@ jobs:
           kubectl apply -f k8s/observability/tempo.yaml
           kubectl apply -f k8s/hpa.yaml
           
+          # Health Checks for Loki and Tempo (Observability core).
           echo "Waiting for Loki to be ready..."
           if ! kubectl rollout status deployment/loki -n shopmicro --timeout=60s; then
             echo "--- LOKI DIAGNOSTICS START ---"
