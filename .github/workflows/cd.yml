@@ -54,7 +54,12 @@ jobs:
 
       - name: Deploy Postgres
         run: |
-          kubectl apply -f k8s/postgres.yaml
+          # Attempt to apply, if it fails due to immutable fields in StatefulSet, recreate it
+          if ! kubectl apply -f k8s/postgres.yaml; then
+            echo "Apply failed, attempting to delete and recreate StatefulSet..."
+            kubectl delete statefulset postgres -n shopmicro --ignore-not-found
+            kubectl apply -f k8s/postgres.yaml
+          fi
           echo "Waiting for Postgres to be ready..."
           kubectl wait --for=condition=Ready pod -l app=postgres -n shopmicro --timeout=300s
 
