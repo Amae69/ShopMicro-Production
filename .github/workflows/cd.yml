@@ -58,6 +58,11 @@ jobs:
           if ! kubectl apply -f k8s/postgres.yaml; then
             echo "Apply failed, attempting to delete and recreate StatefulSet..."
             kubectl delete statefulset postgres -n shopmicro --ignore-not-found
+            
+            # Delete associated PVCS to ensure new storage class is picked up
+            echo "Deleting orphaned PVCs for postgres..."
+            kubectl delete pvc -l app=postgres -n shopmicro --ignore-not-found
+            
             kubectl apply -f k8s/postgres.yaml
           fi
           
