@@ -17,12 +17,6 @@ data:
       trace_idle_period: 10s
       max_block_bytes: 1_000_000
       max_block_duration: 5m
-    compactor:
-      compaction:
-        compaction_window: 1h
-        max_block_bytes: 100_000_000
-        block_retention: 1h
-        compacted_block_retention: 10m
     storage:
       trace:
         backend: local
@@ -46,6 +40,8 @@ spec:
       labels:
         app: tempo
     spec:
+      securityContext:
+        fsGroup: 10001
       containers:
         - name: tempo
           image: grafana/tempo:latest

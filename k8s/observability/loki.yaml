@@ -27,6 +27,8 @@ data:
           index:
             prefix: index_
             period: 24h
+    limits_config:
+      allow_structured_metadata: false
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43,6 +45,8 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        fsGroup: 10001
       containers:
         - name: loki
           image: grafana/loki:latest
