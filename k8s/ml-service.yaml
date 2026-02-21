@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: ml-service
-        image: ghcr.io/amae69-ml-service:${SHA_TAG}
+        image: ghcr.io/amae69/shopmicro-production-ml-service:${SHA_TAG}
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002

@@ -35,16 +35,17 @@ jobs:
       - name: Update Image Tags
         run: |
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           
-          # Match the actual GHCR naming convention from ci.yml
-          sed -i "s|image: .*shopmicro-backend:.*|image: ghcr.io/${REPO_LOWER}-backend:${SHA_TAG}|g" k8s/backend.yaml
-          sed -i "s|image: .*shopmicro-frontend:.*|image: ghcr.io/${REPO_LOWER}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
-          sed -i "s|image: .*shopmicro-ml-service:.*|image: ghcr.io/${REPO_LOWER}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
+          # Directly replace the placeholder string in all manifests
+          # This is more robust than matching against repo names
+          sed -i "s|\${SHA_TAG}|${SHA_TAG}|g" k8s/backend.yaml
+          sed -i "s|\${SHA_TAG}|${SHA_TAG}|g" k8s/frontend.yaml
+          sed -i "s|\${SHA_TAG}|${SHA_TAG}|g" k8s/ml-service.yaml
 
-          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/backend.yaml
-          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
-          sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
+          # Ensure ImagePullPolicy is set to IfNotPresent
+          sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/backend.yaml
+          sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/frontend.yaml
+          sed -i 's/imagePullPolicy: .*/imagePullPolicy: IfNotPresent/g' k8s/ml-service.yaml
 
       - name: Deploy Namespace
         run: kubectl apply -f k8s/namespace.yaml
