@@ -49,11 +49,14 @@ jobs:
       - name: Deploy Namespace
         run: kubectl apply -f k8s/namespace.yaml
 
+      - name: Deploy Secrets
+        run: kubectl apply -f k8s/secrets.yaml.template
+
       - name: Deploy Postgres
         run: |
           kubectl apply -f k8s/postgres.yaml
           echo "Waiting for Postgres to be ready..."
-          kubectl wait --for=condition=Ready pod -l app=postgres -n shopmicro --timeout=180s
+          kubectl wait --for=condition=Ready pod -l app=postgres -n shopmicro --timeout=300s
 
       - name: Deploy Backend
         run: |
