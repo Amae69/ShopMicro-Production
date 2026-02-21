@@ -243,8 +243,6 @@ confirm: `kubectl get pods -n ingress-nginx`
 
 - Apply Ingress Resource: Apply the ingress.yaml file to expose the application externally.
 
-
-
 confirm: `kubectl get ingress -n shopmicro`
 
-![ingress](./images/ingress.png)
+![ingress](./images/get%20ingress.png)

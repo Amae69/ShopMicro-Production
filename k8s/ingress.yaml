@@ -3,21 +3,23 @@ kind: Ingress
 metadata:
   name: shopmicro-ingress
   namespace: shopmicro
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
   - host: shopmicro.local
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - path: /()(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: frontend
             port:
-              number: 3000
-      - path: /api
-        pathType: Prefix
+              number: 80
+      - path: /api(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: backend
