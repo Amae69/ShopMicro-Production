@@ -138,6 +138,7 @@ jobs:
           kubectl apply -f k8s/observability/prometheus.yaml
           kubectl apply -f k8s/observability/prometheus-rules.yaml
           kubectl apply -f k8s/observability/tempo.yaml
+          kubectl apply -f k8s/hpa.yaml
           
           echo "Waiting for Loki to be ready..."
           if ! kubectl rollout status deployment/loki -n shopmicro --timeout=60s; then

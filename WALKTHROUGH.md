@@ -24,9 +24,17 @@
 - **Docker Compose**: Valid configuration file created.
 - **Architecture Diagram**: Mermaid source provided (PNG generation unavailable).
 
-## Next Steps for User
-1. **Local Test**: Run `docker-compose up --build` to see the app running locally.
-2. **Kubernetes Deploy**: Follow `DEPLOYMENT.md` to deploy to your AWS/EKS cluster.
-   - **MANDATORY**: Install the **Amazon EBS CSI Driver** add-on in your EKS cluster console (EKS > Clusters > [Cluster] > Add-ons).
-   - **MANDATORY**: Ensure your node IAM role has `AmazonEBSCSIDriverPolicy` attached.
-3. **Infrastructure**: Fill in `infrastructure/terraform/main.tf` with actual AWS resources.
+## Next Steps
+1.  **Install NGINX Ingress Controller**: The Ingress resource (`k8s/ingress.yaml`) requires a controller to work. Install it on EKS:
+    ```bash
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/aws/deploy.yaml
+    ```
+2.  **Verify Frontend**: I've added a `LoadBalancer` service to `k8s/frontend.yaml`. Get the URL:
+    ```bash
+    kubectl get svc frontend -n shopmicro
+    ```
+3.  **Monitor Scaling**: The HPA is now deployed. Check its status (requires `metrics-server`):
+    ```bash
+    kubectl get hpa -n shopmicro
+    ```
+4.  **Security**: Update `k8s/secrets.yaml.template` with real passwords.

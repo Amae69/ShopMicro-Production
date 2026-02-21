@@ -8,7 +8,9 @@ This guide provides step-by-step instructions to deploy the ShopMicro platform t
 - `kubectl` installed and configured
 - `docker` installed (for building images)
 - `terraform` installed (for infrastructure)
-- **AWS EBS CSI Driver** installed (mandatory for EKS storage)
+- **AWS EBS CSI Driver**: Required for EKS persistent volumes.
+- **NGINX Ingress Controller**: Required for the Ingress resource to function.
+- **Metrics Server**: Required for the Horizontal Pod Autoscaler (HPA) to work.
 
 ## 0. Infrastructure Provisioning (Terraform)
 Before deploying the application, you need a Kubernetes cluster. You can provision the necessary EC2 instances (Master & Worker nodes) using Terraform.

@@ -232,3 +232,19 @@ I implemented a complete GitHub Actions workflow suite:
 : Runs daily at 8am to check for infrastructure drift. Status: ✅ Implemented. Requires Secrets setup in GitHub.
 
 ![drift detection](./images/infrastructure%20drift%20detection.png)
+
+- Install NGINX Ingress Controller: The Ingress resource **(k8s/ingress.yaml)** requires a controller to work. Install it on EKS
+
+`kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/aws/deploy.yaml`
+
+confirm: `kubectl get pods -n ingress-nginx`
+
+![ingress controller](./images/ingress%20controller.png)
+
+- Apply Ingress Resource: Apply the ingress.yaml file to expose the application externally.
+
+
+
+confirm: `kubectl get ingress -n shopmicro`
+
+![ingress](./images/ingress.png)
