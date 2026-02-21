@@ -1,9 +1,12 @@
 from flask import Flask, jsonify, request
 import random
+import os
 
 app = Flask(__name__)
 
 @app.get("/health")
+@app.get("/health/live")
+@app.get("/health/ready")
 def health():
     return jsonify({"status": "ok", "service": "ml-service"})
 
@@ -20,4 +23,5 @@ def metrics():
     return "shopmicro_ml_requests_total 1\n", 200, {"Content-Type": "text/plain; version=0.0.4"}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 3002))
+    app.run(host="0.0.0.0", port=port)
