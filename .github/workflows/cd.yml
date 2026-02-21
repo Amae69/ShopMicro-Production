@@ -16,26 +16,28 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Configure kubeconfig
-        env:
-          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG }}
+      - name: Update Kubeconfig
         run: |
-          mkdir -p $HOME/.kube
-          echo "$KUBECONFIG_DATA" | base64 -d > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
 
       - name: Verify Cluster Connection
         run: |
           kubectl cluster-info
+          kubectl get nodes
 
       - name: Update Image Tags
         run: |
           SHA_TAG="sha-$(git rev-parse --short HEAD)"
           REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-
+          
+          # Match the actual GHCR naming convention from ci.yml
           sed -i "s|image: .*shopmicro-backend:.*|image: ghcr.io/${REPO_LOWER}-backend:${SHA_TAG}|g" k8s/backend.yaml
           sed -i "s|image: .*shopmicro-frontend:.*|image: ghcr.io/${REPO_LOWER}-frontend:${SHA_TAG}|g" k8s/frontend.yaml
           sed -i "s|image: .*shopmicro-ml-service:.*|image: ghcr.io/${REPO_LOWER}-ml-service:${SHA_TAG}|g" k8s/ml-service.yaml
