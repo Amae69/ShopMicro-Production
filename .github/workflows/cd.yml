@@ -94,19 +94,37 @@ jobs:
         run: |
           kubectl apply -f k8s/backend.yaml
           echo "Waiting for Backend to be ready..."
-          kubectl rollout status deployment/backend -n shopmicro --timeout=180s
+          if ! kubectl rollout status deployment/backend -n shopmicro --timeout=180s; then
+            echo "--- BACKEND DIAGNOSTICS START ---"
+            kubectl describe pods -l app=backend -n shopmicro
+            kubectl logs -l app=backend -n shopmicro --all-containers --tail=100
+            echo "--- BACKEND DIAGNOSTICS END ---"
+            exit 1
+          fi
 
       - name: Deploy ML Service
         run: |
           kubectl apply -f k8s/ml-service.yaml
           echo "Waiting for ML Service to be ready..."
-          kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s
+          if ! kubectl rollout status deployment/ml-service-deployment -n shopmicro --timeout=180s; then
+            echo "--- ML SERVICE DIAGNOSTICS START ---"
+            kubectl describe pods -l app=ml-service -n shopmicro
+            kubectl logs -l app=ml-service -n shopmicro --all-containers --tail=100
+            echo "--- ML SERVICE DIAGNOSTICS END ---"
+            exit 1
+          fi
 
       - name: Deploy Frontend
         run: |
           kubectl apply -f k8s/frontend.yaml
           echo "Waiting for Frontend to be ready..."
-          kubectl rollout status deployment/frontend -n shopmicro --timeout=180s
+          if ! kubectl rollout status deployment/frontend -n shopmicro --timeout=180s; then
+            echo "--- FRONTEND DIAGNOSTICS START ---"
+            kubectl describe pods -l app=frontend -n shopmicro
+            kubectl logs -l app=frontend -n shopmicro --all-containers --tail=100
+            echo "--- FRONTEND DIAGNOSTICS END ---"
+            exit 1
+          fi
 
       - name: Deploy Observability & Other Services
         run: |
