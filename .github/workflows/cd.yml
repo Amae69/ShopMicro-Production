@@ -54,15 +54,21 @@ jobs:
 
       - name: Deploy Postgres
         run: |
+          # Proactively delete PVCs using the old 'local-path' storage class if they exist
+          # This prevents the pod from getting stuck on an unsupported volume
+          echo "Checking for old 'local-path' PVCs..."
+          if kubectl get pvc -n shopmicro -o json | jq -e '.items[] | select(.spec.storageClassName=="local-path")' > /dev/null; then
+            echo "Found poisoned PVCs with 'local-path'. Deleting..."
+            kubectl delete pvc -l app=postgres -n shopmicro --ignore-not-found
+            echo "Deleting existing StatefulSet to force fresh volume binding..."
+            kubectl delete statefulset postgres -n shopmicro --ignore-not-found
+          fi
+
           # Attempt to apply, if it fails due to immutable fields in StatefulSet, recreate it
           if ! kubectl apply -f k8s/postgres.yaml; then
             echo "Apply failed, attempting to delete and recreate StatefulSet..."
             kubectl delete statefulset postgres -n shopmicro --ignore-not-found
-            
-            # Delete associated PVCS to ensure new storage class is picked up
-            echo "Deleting orphaned PVCs for postgres..."
             kubectl delete pvc -l app=postgres -n shopmicro --ignore-not-found
-            
             kubectl apply -f k8s/postgres.yaml
           fi
           
