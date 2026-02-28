@@ -130,6 +130,14 @@ resource "aws_eks_cluster" "main" {
   ]
 }
 
+# EKS Addons
+resource "aws_eks_addon" "ebs_csi" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  depends_on = [aws_eks_node_group.main]
+}
+
 # EKS Managed Node Group
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name

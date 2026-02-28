@@ -1,3 +1,14 @@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -84,7 +95,7 @@ spec:
       name: postgres-storage
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: gp2 #for EKS via EBS volume
+      storageClassName: gp3 # using CSI driver with gp3
       resources:
         requests:
           storage: 1Gi
