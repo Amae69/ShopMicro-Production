@@ -19,7 +19,7 @@ venv/
 .DS_Store
 
 # Kubernetes Secrets
-k8s/secrets.yaml.template
+# k8s/secrets.yaml.template (Removed to allow CI/CD to deploy placeholders)
 
 # IDEs
 .vscode/
