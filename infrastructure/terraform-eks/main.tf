@@ -9,6 +9,15 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  # S3 backend for state management
+  backend "s3" {
+    bucket         = "shopmicro-terraform-state-20260228130339474300000001"
+    key            = "eks/terraform.tfstate"
+    region         = "eu-west-2"
+    dynamodb_table = "shopmicro-terraform-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
