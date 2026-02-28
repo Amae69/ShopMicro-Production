@@ -4,12 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - 'infrastructure/terraform/**'
       - 'infrastructure/terraform-eks/**'
   pull_request:
     branches: [main]
     paths:
-      - 'infrastructure/terraform/**'
       - 'infrastructure/terraform-eks/**'
 
 jobs:
@@ -19,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [terraform, terraform-eks]
+        dir: [terraform-eks]
     defaults:
       run:
         working-directory: infrastructure/${{ matrix.dir }}
