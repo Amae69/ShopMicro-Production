@@ -1,6 +1,6 @@
 # 1. IAM Role for EKS Cluster
 resource "aws_iam_role" "eks_cluster" {
-  name = "${var.project_name}-eks-cluster-role"
+  name_prefix = "${var.project_name}-eks-cluster-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -23,7 +23,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 
 # 2. IAM Role for EKS Node Group
 resource "aws_iam_role" "eks_nodes" {
-  name = "${var.project_name}-eks-node-group-role"
+  name_prefix = "${var.project_name}-eks-node-group-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -56,7 +56,7 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
 
 # 3. IAM Role for EBS CSI Driver (IRSA)
 resource "aws_iam_role" "ebs_csi_driver" {
-  name = "${var.project_name}-ebs-csi-driver-role"
+  name_prefix = "${var.project_name}-ebs-csi-driver-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
