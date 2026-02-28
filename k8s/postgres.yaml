@@ -84,7 +84,7 @@ spec:
       name: postgres-storage
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: gp2
+      storageClassName: gp2 #for EKS via EBS volume
       resources:
         requests:
           storage: 1Gi

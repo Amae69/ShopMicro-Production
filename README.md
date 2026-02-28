@@ -26,7 +26,8 @@ ShopMicro is a cloud-native e-commerce platform designed to demonstrate a robust
 ```bash
 cd infrastructure/terraform
 terraform init
-terraform apply -auto-approve
+terraform validate
+terraform apply
 ```
 
 ### B. Kubernetes Deployment
