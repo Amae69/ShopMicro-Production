@@ -54,8 +54,30 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
   role       = aws_iam_role.eks_nodes.name
 }
 
-# 3. IAM Policy for EBS CSI Driver (Required for Postgres)
-resource "aws_iam_role_policy_attachment" "eks_ebs_csi_policy" {
+# 3. IAM Role for EBS CSI Driver (IRSA)
+resource "aws_iam_role" "ebs_csi_driver" {
+  name = "${var.project_name}-ebs-csi-driver-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_oidc_provider.eks.arn
+        }
+        Condition = {
+          StringEquals = {
+            "${replace(aws_iam_oidc_provider.eks.url, "https://", "")}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+          }
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi_driver_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  role       = aws_iam_role.eks_nodes.name
+  role       = aws_iam_role.ebs_csi_driver.name
 }
