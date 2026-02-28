@@ -54,6 +54,11 @@ resource "aws_iam_role_policy_attachment" "eks_ecr_policy" {
   role       = aws_iam_role.eks_nodes.name
 }
 
+resource "aws_iam_role_policy_attachment" "eks_ecr_pull_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly"
+  role       = aws_iam_role.eks_nodes.name
+}
+
 # 3. IAM Role for EBS CSI Driver (IRSA)
 resource "aws_iam_role" "ebs_csi_driver" {
   name_prefix = "${var.project_name}-ebs-csi-driver-"
