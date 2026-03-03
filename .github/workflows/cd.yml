@@ -147,6 +147,7 @@ jobs:
           kubectl apply -f k8s/observability/prometheus.yaml
           kubectl apply -f k8s/observability/prometheus-rules.yaml
           kubectl apply -f k8s/observability/tempo.yaml
+          kubectl apply -f k8s/observability/otel-collector.yaml
           kubectl apply -f k8s/hpa.yaml
           
           # Health Checks for Loki and Tempo (Observability core).
