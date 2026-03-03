@@ -110,4 +110,4 @@ Refer to the detailed runbooks:
 - **Improvements**: 
   - Integration with AWS Secrets Manager for secret rotation.
   - Blue/Green deployment strategy via ArgoCD.
-  - Enhanced WAF integration on the Ingress Load Balancer.
+  - Enhanced WAF integration on the Ingress Load Balancer
