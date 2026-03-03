@@ -20,7 +20,7 @@ terraform {
 
   # S3 backend for state management
   backend "s3" {
-    bucket         = "shopmicro-terraform-state-20260228130339474300000001"
+    bucket         = "shopmicro-terraform-state-20260303062157816200000001"
     key            = "eks/terraform.tfstate"
     region         = "eu-west-2"
     dynamodb_table = "shopmicro-terraform-locks"
