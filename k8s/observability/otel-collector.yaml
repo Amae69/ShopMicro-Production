@@ -20,8 +20,10 @@ data:
         endpoint: "tempo:4317"
         tls:
           insecure: true
-      loki:
-        endpoint: "http://loki:3100/loki/api/v1/push"
+      otlphttp/loki:
+        endpoint: "http://loki:3100/otlp"
+        tls:
+          insecure: true
     service:
       pipelines:
         traces:
@@ -35,7 +37,7 @@ data:
         logs:
           receivers: [otlp]
           processors: [batch]
-          exporters: [loki]
+          exporters: [otlphttp/loki]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -54,7 +56,7 @@ spec:
     spec:
       containers:
         - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:latest
+          image: otel/opentelemetry-collector-contrib:0.114.0
           args:
             - "--config=/etc/otel/config.yaml"
           ports:
