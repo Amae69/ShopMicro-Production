@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infrastructure/terraform
+        working-directory: infrastructure/terraform-eks
 
     # Drift Detection: Checks for differences between actual cloud state and defined Terraform code.
     steps:
